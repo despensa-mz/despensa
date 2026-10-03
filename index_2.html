@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Despensa">
+<meta name="theme-color" content="#f6f3ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b1a18" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Despensa</title>
+<style>
+:root{
+  --bg:#f6f3ee; --card:#ffffff; --text:#1f1d1a; --muted:#7a746b; --line:#e7e1d7;
+  --accent:#2f7d4f; --accent-soft:#e3f0e7; --warn:#c2681c; --warn-soft:#fbeadb;
+  --danger:#c0392b; --danger-soft:#f8e1de; --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1b1a18; --card:#262421; --text:#f1ede6; --muted:#a39c90; --line:#38352f;
+    --accent:#5fbf86; --accent-soft:#233b2c; --warn:#e89a52; --warn-soft:#3d2c1c;
+    --danger:#e57366; --danger-soft:#3e2420;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;font-size:16px}
+body{padding-top:env(safe-area-inset-top);padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+header{padding:14px 16px 6px}
+header h1{margin:0;font-size:28px;letter-spacing:-.5px}
+header p{margin:2px 0 0;color:var(--muted);font-size:14px}
+main{padding:8px 16px 24px;max-width:640px;margin:0 auto}
+.view{display:none}.view.active{display:block}
+.sub{display:none}.sub.active{display:block}
+.day{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;cursor:pointer}
+.day.today{border:2px solid var(--accent)}
+.day .dn{width:124px;flex:none;font-weight:600}
+.day .dn small{display:block;font-size:12px;color:var(--accent);font-weight:600}
+.gchip{display:inline-block;font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin:2px 4px 2px 0}
+.picker{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 10px}
+.picker button,.daypick button{background:var(--card);color:var(--text);border:1px solid var(--line);padding:8px 12px;font-size:14px}
+.picker button.sel,.daypick button.sel{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.daypick{display:flex;gap:5px;margin:4px 0 4px}.daypick button{flex:1;padding:9px 0}
+.big{font-size:22px;font-weight:700;margin-top:2px}
+.overdue{color:var(--danger)!important}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:18px 2px 8px}
+input,select,textarea{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);
+  border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+label{font-size:13px;color:var(--muted);display:block;margin:0 0 4px 2px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+button{font:inherit;border:0;border-radius:10px;padding:11px 14px;cursor:pointer;font-weight:600}
+.btn{background:var(--accent);color:#fff}
+.btn.secondary{background:var(--accent-soft);color:var(--accent)}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn.block{width:100%;margin-top:10px}
+.btn:disabled{opacity:.5}
+.list{list-style:none;margin:0;padding:0}
+.item{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--card);
+  border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.item .info{flex:1;min-width:0}
+.item .name{font-weight:600;overflow-wrap:anywhere}
+.item .meta{font-size:13px;color:var(--muted);margin-top:2px}
+.item.done .name{text-decoration:line-through;color:var(--muted)}
+.icon-btn{background:transparent;color:var(--muted);padding:6px 8px;font-size:18px;line-height:1}
+.chk{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center;
+  background:transparent;padding:0;color:#fff;font-size:15px}
+.item.done .chk{background:var(--accent);border-color:var(--accent)}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;margin-left:6px}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.bad{background:var(--danger-soft);color:var(--danger)}
+.tag.ok{background:var(--accent-soft);color:var(--accent)}
+.empty{text-align:center;color:var(--muted);padding:28px 10px;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:6px 11px;font-size:14px;font-weight:600}
+.search{margin-bottom:10px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+  display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:10}
+nav button{flex:1;background:transparent;color:var(--muted);padding:9px 0 8px;font-size:11px;font-weight:600;
+  display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:0}
+nav button .ic{font-size:22px;line-height:1}
+nav button.active{color:var(--accent)}
+.badge{background:var(--danger);color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:2px}
+.recipe h3{margin:0 0 4px;font-size:19px}
+.recipe .sub{color:var(--muted);font-size:14px;margin-bottom:10px}
+.recipe ul,.recipe ol{padding-left:20px;margin:6px 0 10px}
+.recipe li{margin-bottom:4px}
+.recipe .missing{color:var(--warn)}
+.recipe-actions{display:flex;gap:8px;flex-wrap:wrap}
+.recipe-actions button{flex:1;min-width:140px}
+details.recipe summary{cursor:pointer;list-style:none}
+details.recipe summary::-webkit-details-marker{display:none}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid currentColor;border-right-color:transparent;
+  border-radius:50%;animation:spin .8s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+  background:var(--text);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;
+  transition:.25s;pointer-events:none;z-index:30;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.modal-bg.show{display:flex}
+.modal{background:var(--card);width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.modal h3{margin:0 0 12px}
+.small{font-size:13px;color:var(--muted);line-height:1.45}
+.small a{color:var(--accent)}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;background:transparent;color:var(--muted);padding:8px;font-size:14px}
+.seg button.active{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="title">Hoy</h1>
+  <p id="subtitle"></p>
+</header>
+
+<main>
+  <!-- DESPENSA -->
+  <!-- HOY -->
+  <section class="view active" id="view-today">
+    <h2 id="habits-title">Hábitos de hoy</h2>
+    <div id="habit-list"></div>
+    <h2>Tareas</h2>
+    <div id="task-list"></div>
+    <button class="btn secondary block" id="add-hab">＋ Añadir hábito o tarea</button>
+  </section>
+
+  <!-- GYM -->
+  <section class="view" id="view-gym">
+    <div class="card">
+      <div class="small" style="margin:0">Último día</div>
+      <div class="big" id="gym-last">—</div>
+    </div>
+    <h2>Esta semana</h2>
+    <div id="gym-week"></div>
+    <p class="small" style="text-align:center">El lunes la semana empieza en blanco.</p>
+  </section>
+
+  <!-- COMIDA -->
+  <section class="view" id="view-food">
+  <div class="seg" id="food-seg">
+    <button data-sub="pantry" class="active">Despensa</button>
+    <button data-sub="shop">Compra <span id="shop-badge2"></span></button>
+    <button data-sub="recipes">Recetas</button>
+  </div>
+  <section class="sub active" id="view-pantry">
+    <div class="card">
+      <div class="row">
+        <input id="p-name" placeholder="Añadir alimento (ej. Huevos)" autocomplete="off" enterkeyhint="done">
+      </div>
+      <div class="grid2">
+        <div><label for="p-qty">Cantidad</label><input id="p-qty" placeholder="ej. 6, 500 g, 1 L"></div>
+        <div><label for="p-exp">Caduca (opcional)</label><input id="p-exp" type="date"></div>
+      </div>
+      <div style="margin-top:8px"><label for="p-cat">Categoría</label><select id="p-cat"></select></div>
+      <button class="btn block" id="p-add">Añadir a la despensa</button>
+    </div>
+    <input class="search" id="p-search" placeholder="Buscar en la despensa…" autocomplete="off">
+    <div id="pantry-list"></div>
+  </section>
+
+  <!-- COMPRA -->
+  <section class="sub" id="view-shop">
+    <div class="card">
+      <div class="row">
+        <input id="s-name" placeholder="¿Qué hay que comprar?" autocomplete="off" enterkeyhint="done">
+        <input id="s-qty" placeholder="Cant." style="flex:0 0 90px">
+      </div>
+      <button class="btn block" id="s-add">Añadir a la lista</button>
+    </div>
+    <div id="shop-list"></div>
+    <div id="shop-actions"></div>
+  </section>
+
+  <!-- RECETAS -->
+  <section class="sub" id="view-recipes">
+    <div class="seg" id="r-seg">
+      <button data-seg="gen" class="active">Sugerir</button>
+      <button data-seg="saved">Guardadas</button>
+    </div>
+    <div id="r-gen">
+      <div class="card">
+        <div class="grid2" style="margin-top:0">
+          <div><label for="r-meal">Para</label>
+            <select id="r-meal">
+              <option>Cualquier momento</option><option>Desayuno</option><option>Comida</option>
+              <option>Cena</option><option>Merienda / snack</option><option>Postre</option>
+            </select></div>
+          <div><label for="r-time">Tiempo máximo</label>
+            <select id="r-time">
+              <option value="">Sin límite</option><option value="15">15 min</option>
+              <option value="30" selected>30 min</option><option value="60">1 hora</option>
+            </select></div>
+          <div><label for="r-people">Raciones</label>
+            <select id="r-people"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>6</option></select></div>
+          <div><label for="r-style">Estilo</label>
+            <select id="r-style">
+              <option>Casera normal</option><option>Saludable / ligera</option><option>Alta en proteína</option>
+              <option>Rápida y sencilla</option><option>Para llevar en táper</option>
+            </select></div>
+        </div>
+        <div style="margin-top:8px"><label for="r-notes">Algo más (opcional)</label>
+          <input id="r-notes" placeholder="ej. sin horno, me apetece algo de cuchara…"></div>
+        <button class="btn block" id="r-go">¿Qué cocino hoy?</button>
+        <p class="small" id="r-hint" style="margin:10px 2px 0"></p>
+      </div>
+      <div id="recipe-results"></div>
+    </div>
+    <div id="r-saved" style="display:none"></div>
+  </section>
+  </section>
+
+  <!-- AJUSTES -->
+  <section class="view" id="view-settings">
+    <h2>Recetas con IA (gratis)</h2>
+    <div class="card">
+      <label for="cfg-key">Clave de la API de Google Gemini</label>
+      <input id="cfg-key" type="password" placeholder="Pega aquí tu clave" autocomplete="off">
+      <div style="margin-top:8px"><label for="cfg-model">Modelo</label>
+        <input id="cfg-model" placeholder="gemini-flash-latest"></div>
+      <button class="btn block" id="cfg-save">Guardar</button>
+      <button class="btn secondary block" id="cfg-test">Probar conexión</button>
+      <p class="small" style="margin-top:12px">
+        Consíguela gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
+        con tu cuenta de Google. La clave solo se guarda en este móvil.
+        Sin clave, la app te sugiere recetas de su recetario incluido.
+      </p>
+    </div>
+
+    <h2>Copia de seguridad</h2>
+    <div class="card">
+      <p class="small" style="margin-top:0">Tus datos viven en este iPhone. Haz una copia de vez en cuando (por ejemplo, guárdala en Archivos o iCloud Drive).</p>
+      <button class="btn secondary block" id="bk-export">Exportar copia</button>
+      <button class="btn ghost block" id="bk-import">Importar copia</button>
+      <input type="file" id="bk-file" accept="application/json,.json" hidden>
+    </div>
+
+    <h2>Zona peligrosa</h2>
+    <div class="card">
+      <button class="btn danger block" style="margin-top:0" id="wipe">Borrar todos los datos</button>
+    </div>
+    <p class="small" style="text-align:center">Despensa · v1.2</p>
+  </section>
+</main>
+
+<nav>
+  <button data-view="today" class="active"><span class="ic">✅</span>Hoy</button>
+  <button data-view="gym"><span class="ic">🏋️</span>Gym</button>
+  <button data-view="food"><span class="ic">🥫</span><span>Comida <span id="shop-badge"></span></span></button>
+  <button data-view="settings"><span class="ic">⚙️</span>Ajustes</button>
+</nav>
+
+<div class="modal-bg" id="modal-bg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ---------- Datos ---------- */
+const STORE_KEY = "despensa-app-v1";
+const CATEGORIES = ["Frescos","Carne y pescado","Lácteos y huevos","Fruta y verdura","Despensa seca","Congelados","Bebidas","Especias y salsas","Otros"];
+const defaultHabits = () => [
+  {id:"h1",name:"Ir a correr",days:[0,2,4]},
+  {id:"h2",name:"Ir al gym",days:[0,1,2,3,4,5,6]},
+  {id:"h3",name:"Agradecer algo",days:[0,1,2,3,4,5,6]},
+  {id:"h4",name:"Decir algo bueno a alguien",days:[0,1,2,3,4,5,6]}];
+const defaultState = () => ({pantry:[], shop:[], saved:[], habits:defaultHabits(), habitsDone:{date:"",ids:[]}, tasks:[],
+  gym:{week:"",days:{},last:null}, settings:{apiKey:"", model:"gemini-flash-latest"}});
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultState();
+    const s = JSON.parse(raw);
+    const d = defaultState();
+    return {pantry:s.pantry||[], shop:s.shop||[], saved:s.saved||[], habits:s.habits||d.habits, habitsDone:s.habitsDone||d.habitsDone,
+      tasks:s.tasks||[], gym:s.gym||d.gym, settings:{...d.settings, ...(s.settings||{})}};
+  }catch(e){ return defaultState(); }
+}
+let state = load();
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch(e){ toast("No se pudo guardar 😕"); }
+}
+if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
+
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+const cap = s => s ? s.charAt(0).toUpperCase()+s.slice(1) : s;
+
+function toast(msg){
+  const t=$("#toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+/* ---------- Navegación ---------- */
+let currentSub="pantry";
+const SUBT={pantry:"Lo que tienes en casa",shop:"Lo que te falta",recipes:"Con lo que tienes"};
+function setHeader(view){
+  const t={today:"Hoy",gym:"Gym",food:"Comida",settings:"Ajustes"}[view];
+  let sub="";
+  if(view==="today") sub=cap(new Date().toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"}));
+  if(view==="gym") sub="Toca un día para apuntar lo que hiciste";
+  if(view==="food") sub=SUBT[currentSub];
+  if(view==="settings") sub="Configuración y copias";
+  $("#title").textContent=t; $("#subtitle").textContent=sub;
+}
+function show(view){
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active", v.id==="view-"+view));
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.view===view));
+  if(view==="today") renderToday();
+  if(view==="gym") renderGym();
+  if(view==="food"&&currentSub==="recipes") renderRecipeHint();
+  setHeader(view); window.scrollTo(0,0);
+}
+function showSub(sub){
+  currentSub=sub;
+  document.querySelectorAll(".sub").forEach(v=>v.classList.toggle("active", v.id==="view-"+sub));
+  document.querySelectorAll("#food-seg button").forEach(b=>b.classList.toggle("active", b.dataset.sub===sub));
+  if(sub==="recipes") renderRecipeHint();
+  setHeader("food");
+}
+function showFood(sub){ show("food"); showSub(sub); }
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));
+document.querySelectorAll("#food-seg button").forEach(b=>b.addEventListener("click",()=>showSub(b.dataset.sub)));
+
+/* ---------- Caducidad ---------- */
+function daysLeft(dateStr){
+  if(!dateStr) return null;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const d=new Date(dateStr+"T00:00:00");
+  return Math.round((d-today)/86400000);
+}
+function expiryTag(dateStr){
+  const n=daysLeft(dateStr); if(n===null) return "";
+  if(n<0) return `<span class="tag bad">Caducado</span>`;
+  if(n===0) return `<span class="tag bad">Caduca hoy</span>`;
+  if(n<=3) return `<span class="tag warn">${n===1?"Mañana":n+" días"}</span>`;
+  return "";
+}
+function fmtDate(d){ if(!d) return ""; const [y,m,dd]=d.split("-"); return `${dd}/${m}/${y.slice(2)}`; }
+
+/* ---------- Despensa ---------- */
+$("#p-cat").innerHTML = CATEGORIES.map(c=>`<option>${c}</option>`).join("");
+function guessCategory(name){
+  const n=norm(name);
+  const rules=[
+    ["Lácteos y huevos",/huevo|leche|yogur|queso|nata|mantequilla|kefir/],
+    ["Carne y pescado",/pollo|ternera|cerdo|carne|jamon|lomo|pavo|salchich|chorizo|atun|salmon|merluza|pescado|gamba|bacalao|sardina|filete|hamburguesa/],
+    ["Fruta y verdura",/tomate|cebolla|ajo|patata|zanahoria|pimiento|lechuga|calabac|berenjena|espinaca|brocoli|manzana|platano|naranja|limon|fresa|pera|uva|aguacate|pepino|champi|seta|puerro|calabaza|fruta|verdura/],
+    ["Despensa seca",/arroz|pasta|macarron|espagueti|harina|lenteja|garbanzo|alubia|judia|azucar|avena|pan|galleta|cereal|quinoa|cuscus|tomate frito|conserva|caldo/],
+    ["Especias y salsas",/sal$|^sal |pimienta|oregano|comino|pimenton|aceite|vinagre|salsa|ketchup|mayonesa|mostaza|soja|especia|curry|canela/],
+    ["Congelados",/congelad|helado/],
+    ["Bebidas",/agua|zumo|refresco|cerveza|vino|cafe|^te$|^te |cola/]
+  ];
+  for(const [c,r] of rules) if(r.test(n)) return c;
+  return "Otros";
+}
+$("#p-name").addEventListener("input",e=>{ $("#p-cat").value=guessCategory(e.target.value); });
+
+function addPantry(name,qty,exp,cat){
+  name=cap(name.trim()); if(!name) return false;
+  const ex=state.pantry.find(i=>norm(i.name)===norm(name));
+  if(ex){ if(qty) ex.qty=qty; if(exp) ex.exp=exp; }
+  else state.pantry.push({id:uid(),name,qty:qty||"",exp:exp||"",cat:cat||guessCategory(name),added:Date.now()});
+  return true;
+}
+$("#p-add").addEventListener("click",()=>{
+  const name=$("#p-name").value;
+  if(!name.trim()){ $("#p-name").focus(); return; }
+  addPantry(name,$("#p-qty").value.trim(),$("#p-exp").value,$("#p-cat").value);
+  save(); renderPantry();
+  $("#p-name").value=""; $("#p-qty").value=""; $("#p-exp").value="";
+  toast("Añadido a la despensa"); $("#p-name").focus();
+});
+$("#p-name").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#p-add").click(); });
+$("#p-search").addEventListener("input",renderPantry);
+
+function renderPantry(){
+  const q=norm($("#p-search").value);
+  const items=state.pantry.filter(i=>!q||norm(i.name).includes(q));
+  const box=$("#pantry-list");
+  if(!state.pantry.length){ box.innerHTML=`<div class="empty">Tu despensa está vacía.<br>Añade lo que tengas en casa 👆</div>`; return; }
+  if(!items.length){ box.innerHTML=`<div class="empty">Nada coincide con “${esc($("#p-search").value)}”</div>`; return; }
+  // Primero lo que caduca pronto
+  const soon=items.filter(i=>{const n=daysLeft(i.exp);return n!==null&&n<=3;}).sort((a,b)=>a.exp.localeCompare(b.exp));
+  let html="";
+  if(soon.length){
+    html+=`<h2>⚠️ Úsalo pronto</h2><ul class="list">${soon.map(pantryRow).join("")}</ul>`;
+  }
+  const byCat={};
+  items.filter(i=>!soon.includes(i)).forEach(i=>{(byCat[i.cat]=byCat[i.cat]||[]).push(i);});
+  CATEGORIES.forEach(c=>{
+    if(!byCat[c]) return;
+    byCat[c].sort((a,b)=>a.name.localeCompare(b.name,"es"));
+    html+=`<h2>${c}</h2><ul class="list">${byCat[c].map(pantryRow).join("")}</ul>`;
+  });
+  box.innerHTML=html;
+}
+function pantryRow(i){
+  const meta=[i.qty, i.exp?("cad. "+fmtDate(i.exp)):""].filter(Boolean).join(" · ");
+  return `<li class="item">
+    <div class="info"><div class="name">${esc(i.name)}${expiryTag(i.exp)}</div>${meta?`<div class="meta">${esc(meta)}</div>`:""}</div>
+    <button class="icon-btn" title="Se ha acabado" onclick="finishItem('${i.id}')">🛒</button>
+    <button class="icon-btn" title="Editar" onclick="editPantry('${i.id}')">✏️</button>
+  </li>`;
+}
+function finishItem(id){
+  const it=state.pantry.find(i=>i.id===id); if(!it) return;
+  openModal(`<h3>Se acabó: ${esc(it.name)}</h3>
+    <p class="small" style="margin-top:0">¿Lo quitamos de la despensa?</p>
+    <button class="btn block" onclick="finishConfirm('${id}',true)">Quitar y añadir a la compra</button>
+    <button class="btn secondary block" onclick="finishConfirm('${id}',false)">Solo quitar</button>
+    <button class="btn ghost block" onclick="closeModal()">Cancelar</button>`);
+}
+function finishConfirm(id,toShop){
+  const it=state.pantry.find(i=>i.id===id); if(!it) return;
+  state.pantry=state.pantry.filter(i=>i.id!==id);
+  if(toShop) addShop(it.name,"");
+  save(); renderAll(); closeModal();
+  toast(toShop?"Añadido a la lista de la compra":"Quitado de la despensa");
+}
+function editPantry(id){
+  const it=state.pantry.find(i=>i.id===id); if(!it) return;
+  openModal(`<h3>Editar</h3>
+    <label>Nombre</label><input id="e-name" value="${esc(it.name)}">
+    <div class="grid2"><div><label>Cantidad</label><input id="e-qty" value="${esc(it.qty)}"></div>
+    <div><label>Caduca</label><input id="e-exp" type="date" value="${esc(it.exp)}"></div></div>
+    <div style="margin-top:8px"><label>Categoría</label><select id="e-cat">${CATEGORIES.map(c=>`<option ${c===it.cat?"selected":""}>${c}</option>`).join("")}</select></div>
+    <button class="btn block" onclick="saveEdit('${id}')">Guardar</button>
+    <button class="btn danger block" onclick="delPantry('${id}')">Eliminar</button>
+    <button class="btn ghost block" onclick="closeModal()">Cancelar</button>`);
+}
+function saveEdit(id){
+  const it=state.pantry.find(i=>i.id===id); if(!it) return;
+  const n=$("#e-name").value.trim(); if(n) it.name=cap(n);
+  it.qty=$("#e-qty").value.trim(); it.exp=$("#e-exp").value; it.cat=$("#e-cat").value;
+  save(); renderPantry(); closeModal();
+}
+function delPantry(id){ state.pantry=state.pantry.filter(i=>i.id!==id); save(); renderPantry(); closeModal(); toast("Eliminado"); }
+
+/* ---------- Compra ---------- */
+function addShop(name,qty){
+  name=cap(String(name).trim()); if(!name) return false;
+  const ex=state.shop.find(i=>norm(i.name)===norm(name)&&!i.done);
+  if(ex){ if(qty) ex.qty=qty; return false; }
+  state.shop.push({id:uid(),name,qty:qty||"",done:false});
+  return true;
+}
+$("#s-add").addEventListener("click",()=>{
+  const n=$("#s-name").value; if(!n.trim()){ $("#s-name").focus(); return; }
+  addShop(n,$("#s-qty").value.trim()); save(); renderShop();
+  $("#s-name").value=""; $("#s-qty").value=""; $("#s-name").focus();
+});
+$("#s-name").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#s-add").click(); });
+
+function renderShop(){
+  const box=$("#shop-list"), act=$("#shop-actions");
+  const pending=state.shop.filter(i=>!i.done), done=state.shop.filter(i=>i.done);
+  const bd = pending.length?`<span class="badge">${pending.length}</span>`:"";
+  $("#shop-badge").innerHTML = bd; $("#shop-badge2").innerHTML = bd;
+  if(!state.shop.length){ box.innerHTML=`<div class="empty">La lista está vacía 🎉<br>Cuando algo se acabe, pulsa 🛒 en la despensa.</div>`; act.innerHTML=""; return; }
+  const row=i=>`<li class="item ${i.done?"done":""}">
+      <button class="chk" onclick="toggleShop('${i.id}')">${i.done?"✓":""}</button>
+      <div class="info" onclick="toggleShop('${i.id}')"><div class="name">${esc(i.name)}</div>${i.qty?`<div class="meta">${esc(i.qty)}</div>`:""}</div>
+      <button class="icon-btn" title="Eliminar" onclick="delShop('${i.id}')">✕</button></li>`;
+  let html="";
+  if(pending.length) html+=`<h2>Por comprar (${pending.length})</h2><ul class="list">${pending.map(row).join("")}</ul>`;
+  if(done.length) html+=`<h2>En el carro (${done.length})</h2><ul class="list">${done.map(row).join("")}</ul>`;
+  box.innerHTML=html;
+  act.innerHTML = done.length
+    ? `<button class="btn block" onclick="checkout()">Guardar comprados en la despensa (${done.length})</button>
+       <button class="btn ghost block" onclick="clearDone()">Quitar marcados sin guardar</button>` : "";
+}
+function toggleShop(id){ const it=state.shop.find(i=>i.id===id); if(it){ it.done=!it.done; save(); renderShop(); } }
+function delShop(id){ state.shop=state.shop.filter(i=>i.id!==id); save(); renderShop(); }
+function checkout(){
+  const done=state.shop.filter(i=>i.done);
+  done.forEach(i=>addPantry(i.name,i.qty,"",guessCategory(i.name)));
+  state.shop=state.shop.filter(i=>!i.done);
+  save(); renderAll(); toast(`${done.length} producto${done.length>1?"s":""} a la despensa ✅`);
+}
+function clearDone(){ state.shop=state.shop.filter(i=>!i.done); save(); renderShop(); }
+
+/* ---------- Recetas ---------- */
+let lastRecipes=[];
+document.querySelectorAll("#r-seg button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#r-seg button").forEach(x=>x.classList.toggle("active",x===b));
+  const gen=b.dataset.seg==="gen";
+  $("#r-gen").style.display=gen?"":"none"; $("#r-saved").style.display=gen?"none":"";
+  if(!gen) renderSaved();
+}));
+function renderRecipeHint(){
+  const n=state.pantry.length;
+  $("#r-hint").innerHTML = !n ? "Primero añade alimentos a la despensa."
+    : state.settings.apiKey ? `Usaré los ${n} alimentos de tu despensa, priorizando lo que caduca antes.`
+    : `Sin clave de IA: te sugiero recetas del recetario incluido. Para recetas a medida, añade tu clave gratis en Ajustes.`;
+}
+
+$("#r-go").addEventListener("click",async()=>{
+  if(!state.pantry.length){ toast("Añade primero algo a la despensa"); showFood("pantry"); return; }
+  const btn=$("#r-go"), out=$("#recipe-results");
+  btn.disabled=true; btn.innerHTML=`<span class="spinner"></span>Pensando…`;
+  out.innerHTML="";
+  try{
+    lastRecipes = state.settings.apiKey ? await aiRecipes() : localRecipes();
+    if(!lastRecipes.length) out.innerHTML=`<div class="empty">No he encontrado recetas que encajen. Prueba a añadir más alimentos o quitar filtros.</div>`;
+    else out.innerHTML=lastRecipes.map((r,i)=>recipeCard(r,i,false)).join("");
+  }catch(err){
+    console.error(err);
+    out.innerHTML=`<div class="card"><b>No he podido generar recetas con la IA.</b><p class="small">${esc(err.message)}</p>
+      <button class="btn secondary block" id="r-fallback">Ver recetas del recetario incluido</button></div>`;
+    $("#r-fallback").onclick=()=>{ lastRecipes=localRecipes(); out.innerHTML=lastRecipes.length?lastRecipes.map((r,i)=>recipeCard(r,i,false)).join(""):`<div class="empty">Nada en el recetario encaja con tu despensa.</div>`; };
+  }finally{
+    btn.disabled=false; btn.textContent="¿Qué cocino hoy?";
+  }
+});
+
+function pantryForPrompt(){
+  return state.pantry.map(i=>{
+    const n=daysLeft(i.exp);
+    let s="- "+i.name+(i.qty?` (${i.qty})`:"");
+    if(n!==null) s+= n<0?" [CADUCADO, no usar]": n<=3?` [caduca en ${n} día(s), PRIORIZAR]`:"";
+    return s;
+  }).join("\n");
+}
+
+async function aiRecipes(){
+  const meal=$("#r-meal").value, time=$("#r-time").value, people=$("#r-people").value,
+        style=$("#r-style").value, notes=$("#r-notes").value.trim();
+  const prompt=`Eres un cocinero casero español. Propón 3 recetas distintas usando sobre todo estos alimentos que tengo en casa:
+${pantryForPrompt()}
+
+Condiciones:
+- Momento: ${meal}
+- ${time?`Tiempo total máximo: ${time} minutos`:"Sin límite de tiempo"}
+- Raciones: ${people}
+- Estilo: ${style}
+${notes?`- Preferencias: ${notes}`:""}
+- Usa al máximo lo que tengo, sobre todo lo marcado como PRIORIZAR. No uses lo marcado como CADUCADO.
+- Supón que tengo sal, agua, aceite de oliva y pimienta aunque no estén en la lista.
+- Si a una receta le falta algún ingrediente, que sean pocos y fáciles de conseguir, y ponlos en "faltan".
+- Escribe en español de España, con cantidades concretas y pasos claros.
+
+Responde SOLO con JSON con esta forma exacta:
+{"recetas":[{"titulo":"","descripcion":"una frase","tiempo_min":0,"raciones":0,"dificultad":"Fácil|Media|Difícil","ingredientes":["cantidad + ingrediente"],"faltan":["ingrediente que no tengo"],"pasos":["paso 1","paso 2"],"consejo":"opcional"}]}`;
+
+  const first=(state.settings.model||"gemini-flash-latest").trim();
+  const models=[...new Set([first,"gemini-flash-latest","gemini-flash-lite-latest","gemini-2.5-flash"])];
+  const body=JSON.stringify({
+    contents:[{role:"user",parts:[{text:prompt}]}],
+    generationConfig:{responseMimeType:"application/json",temperature:0.9}
+  });
+  let data=null, lastErr="";
+  for(const model of models){
+    let res;
+    try{
+      res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{
+        method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":state.settings.apiKey},body});
+    }catch(e){ throw new Error("Sin conexión a internet."); }
+    const d=await res.json().catch(()=>({}));
+    if(res.ok){ data=d; break; }
+    const msg=d?.error?.message||`Error ${res.status}`;
+    if(res.status===400||res.status===401||res.status===403) throw new Error("La clave no es válida. Revísala en Ajustes. ("+msg+")");
+    // 404 (modelo no existe), 429 (límite), 500/503 (saturado): probamos el siguiente modelo
+    lastErr = res.status===429 ? "Has llegado al límite gratuito por ahora. Espera un rato y vuelve a probar."
+            : (res.status===503||res.status===500) ? "Los servidores de Google están saturados ahora mismo. Prueba en unos minutos."
+            : msg;
+  }
+  if(!data) throw new Error(lastErr||"No se pudo contactar con la IA.");
+  const text=(data?.candidates?.[0]?.content?.parts||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join("");
+  if(!text) throw new Error("La IA no ha devuelto respuesta. Prueba otra vez.");
+  let parsed;
+  try{ parsed=JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g,"")); }
+  catch(e){ throw new Error("La respuesta de la IA no tenía el formato esperado. Prueba otra vez."); }
+  const list=Array.isArray(parsed)?parsed:(parsed.recetas||[]);
+  return list.map(r=>({
+    id:uid(), title:r.titulo||"Receta", desc:r.descripcion||"", time:r.tiempo_min||"", servings:r.raciones||people,
+    difficulty:r.dificultad||"", ingredients:r.ingredientes||[], missing:r.faltan||[], steps:r.pasos||[], tip:r.consejo||"", source:"IA"
+  }));
+}
+
+/* Recetario incluido (sin IA) */
+const BOOK=[
+ {t:"Tortilla de patatas",m:["Comida","Cena"],time:40,need:["huevo","patata"],opt:["cebolla"],steps:["Pela y corta las patatas (y la cebolla) en láminas finas.","Fríelas a fuego medio en abundante aceite hasta que estén tiernas, unos 20 min.","Escúrrelas y mézclalas con los huevos batidos y sal. Deja reposar 5 min.","Cuaja en una sartén con un poco de aceite, dale la vuelta con un plato y termina 2-3 min."]},
+ {t:"Huevos revueltos con champiñones",m:["Desayuno","Cena"],time:10,need:["huevo"],opt:["champinon","seta","jamon","cebolla"],steps:["Saltea los champiñones (o lo que tengas) con un poco de aceite y sal.","Añade los huevos batidos a fuego bajo.","Remueve suavemente hasta que cuajen pero queden jugosos."]},
+ {t:"Arroz a la cubana",m:["Comida"],time:25,need:["arroz","huevo"],opt:["tomate frito","platano"],steps:["Cuece el arroz en agua con sal unos 18 min y escúrrelo.","Fríe los huevos (y el plátano si tienes).","Sirve con tomate frito caliente."]},
+ {t:"Macarrones con tomate",m:["Comida","Cena"],time:20,need:["macarron","tomate"],opt:["chorizo","atun","cebolla","queso"],steps:["Cuece la pasta en agua con sal según el paquete.","Sofríe cebolla (y chorizo o atún si tienes) y añade el tomate 5 min.","Mezcla con la pasta y gratina con queso si quieres."]},
+ {t:"Espaguetis aglio e olio",m:["Comida","Cena"],time:15,need:["espagueti","ajo"],opt:["guindilla","perejil","queso"],steps:["Cuece la pasta al dente y guarda un vaso del agua.","Dora el ajo laminado en aceite a fuego suave (con guindilla si tienes).","Mezcla la pasta con el aceite y un chorrito del agua de cocción hasta que ligue."]},
+ {t:"Pollo al ajillo",m:["Comida","Cena"],time:35,need:["pollo","ajo"],opt:["vino","perejil","patata"],steps:["Salpimienta el pollo troceado y dóralo bien en aceite.","Añade los ajos enteros machacados y dora 2 min.","Echa un chorro de vino o agua, tapa y deja 15-20 min a fuego medio."]},
+ {t:"Pechuga a la plancha con verduras",m:["Comida","Cena"],time:20,need:["pollo"],opt:["calabacin","pimiento","cebolla","berenjena","zanahoria"],steps:["Corta las verduras y saltéalas con aceite y sal 8-10 min.","Haz la pechuga a la plancha 4-5 min por lado.","Sirve todo junto con un chorrito de limón si tienes."]},
+ {t:"Lentejas estofadas",m:["Comida"],time:45,need:["lenteja"],opt:["chorizo","zanahoria","patata","cebolla","pimiento","ajo"],steps:["Sofríe cebolla, ajo, pimiento y zanahoria picados.","Añade pimentón (sin quemarlo), las lentejas, la patata y cubre de agua.","Cuece 30-40 min (o 10 de bote) hasta que estén tiernas. Añade el chorizo al principio si tienes."]},
+ {t:"Garbanzos salteados con espinacas",m:["Comida","Cena"],time:15,need:["garbanzo"],opt:["espinaca","ajo","huevo","comino"],steps:["Dora ajo laminado en aceite.","Añade espinacas hasta que reduzcan.","Incorpora los garbanzos cocidos, comino y pimentón, y saltea 5 min."]},
+ {t:"Ensalada de atún",m:["Comida","Cena"],time:10,need:["atun"],opt:["lechuga","tomate","huevo","cebolla","maiz","aceituna"],steps:["Lava y corta las verduras que tengas.","Añade el atún escurrido (y huevo cocido si tienes).","Aliña con aceite, vinagre y sal."]},
+ {t:"Crema de calabacín",m:["Comida","Cena"],time:30,need:["calabacin"],opt:["cebolla","patata","queso","puerro"],steps:["Pocha la cebolla o el puerro en aceite.","Añade calabacín (y una patata) troceado, cubre de agua y cuece 20 min.","Tritura con sal (y un quesito si tienes) hasta que quede fino."]},
+ {t:"Merluza en salsa verde",m:["Comida","Cena"],time:25,need:["merluza","ajo"],opt:["perejil","harina","vino","gamba"],steps:["Dora ajo picado en aceite y añade una cucharadita de harina.","Echa un poco de vino o caldo y remueve hasta que espese.","Añade la merluza y el perejil, y cocina 6-8 min moviendo la cazuela."]},
+ {t:"Salmón al horno con patatas",m:["Comida","Cena"],time:40,need:["salmon"],opt:["patata","limon","cebolla"],steps:["Hornea las patatas en rodajas con aceite y sal a 200 °C, 20 min.","Pon encima el salmón salpimentado con rodajas de limón.","Hornea 12-15 min más."]},
+ {t:"Tostadas con tomate y jamón",m:["Desayuno","Merienda / snack"],time:5,need:["pan","tomate"],opt:["jamon","aceite","ajo"],steps:["Tuesta el pan.","Frota con ajo si quieres y ralla el tomate por encima.","Aceite, sal y una loncha de jamón si tienes."]},
+ {t:"Porridge de avena",m:["Desayuno"],time:10,need:["avena","leche"],opt:["platano","canela","miel","fruta"],steps:["Calienta la leche con la avena a fuego medio removiendo 5 min.","Añade canela o miel al gusto.","Sirve con fruta troceada por encima."]},
+ {t:"Yogur con fruta y avena",m:["Desayuno","Merienda / snack","Postre"],time:5,need:["yogur"],opt:["avena","platano","fresa","manzana","miel"],steps:["Pon el yogur en un bol.","Añade fruta troceada y avena por encima.","Un hilo de miel si quieres."]},
+ {t:"Arroz salteado con verduras y huevo",m:["Comida","Cena"],time:20,need:["arroz","huevo"],opt:["zanahoria","pimiento","guisante","cebolla","soja","pollo"],steps:["Cuece el arroz (mejor si es del día anterior).","Saltea las verduras picadas a fuego fuerte.","Añade el arroz, haz hueco para revolver el huevo y termina con salsa de soja."]},
+ {t:"Patatas a lo pobre con huevo",m:["Comida","Cena"],time:35,need:["patata","huevo"],opt:["cebolla","pimiento","ajo"],steps:["Confita patata, cebolla y pimiento en aceite a fuego medio 25 min.","Escurre y sala.","Sirve con huevos fritos encima."]},
+ {t:"Quesadillas",m:["Cena","Merienda / snack"],time:10,need:["tortilla de trigo","queso"],opt:["pollo","jamon","pimiento","cebolla"],steps:["Pon queso y el relleno sobre media tortilla y dóblala.","Dórala en sartén sin aceite 2 min por lado.","Corta en triángulos."]},
+ {t:"Batido de plátano",m:["Desayuno","Merienda / snack"],time:5,need:["platano","leche"],opt:["avena","cacao","miel"],steps:["Tritura plátano y leche.","Añade avena o cacao si quieres más cuerpo.","Sirve frío."]}
+];
+function localRecipes(){
+  const meal=$("#r-meal").value, time=parseInt($("#r-time").value)||999;
+  const have=state.pantry.filter(i=>{const n=daysLeft(i.exp);return n===null||n>=0;}).map(i=>norm(i.name));
+  const urgent=state.pantry.filter(i=>{const n=daysLeft(i.exp);return n!==null&&n>=0&&n<=3;}).map(i=>norm(i.name));
+  const has=k=>have.some(h=>h.includes(k)||(h.length>=4&&k.includes(h)));
+  const scored=BOOK.filter(r=>(meal==="Cualquier momento"||r.m.includes(meal))&&r.time<=time).map(r=>{
+    const needHave=r.need.filter(has), optHave=r.opt.filter(has);
+    const urg=[...r.need,...r.opt].filter(k=>urgent.some(u=>u.includes(k)||(u.length>=4&&k.includes(u)))).length;
+    return {r,needHave,optHave,score:needHave.length*10+optHave.length*2+urg*5, missing:r.need.filter(k=>!has(k))};
+  }).filter(x=>x.needHave.length>0&&x.missing.length<=1).sort((a,b)=>b.score-a.score||a.missing.length-b.missing.length).slice(0,5);
+  return scored.map(({r,optHave,missing})=>({
+    id:uid(), title:r.t, desc:"Del recetario incluido.", time:r.time, servings:$("#r-people").value, difficulty:"",
+    ingredients:[...r.need.filter(k=>!missing.includes(k)),...optHave].map(cap),
+    missing:missing.map(cap), steps:r.steps, tip:r.opt.filter(k=>!optHave.includes(k)).length?("Si tienes, también puedes añadir: "+r.opt.filter(k=>!optHave.includes(k)).join(", ")+"."):"", source:"Recetario"
+  }));
+}
+
+function recipeCard(r,i,saved){
+  const meta=[r.time?`⏱ ${r.time} min`:"", r.servings?`🍽 ${r.servings} rac.`:"", r.difficulty?`· ${r.difficulty}`:""].filter(Boolean).join("  ");
+  const isSaved=state.saved.some(s=>s.title===r.title);
+  return `<div class="card recipe">
+    <h3>${esc(r.title)}</h3>
+    <div class="sub">${esc(r.desc)}${meta?"<br>"+esc(meta):""}</div>
+    <b>Ingredientes</b>
+    <ul>${r.ingredients.map(x=>`<li>${esc(x)}</li>`).join("")}${r.missing.map(x=>`<li class="missing">${esc(x)} <small>(te falta)</small></li>`).join("")}</ul>
+    <b>Pasos</b>
+    <ol>${r.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+    ${r.tip?`<p class="small">💡 ${esc(r.tip)}</p>`:""}
+    <div class="recipe-actions">
+      ${r.missing.length?`<button class="btn secondary" onclick="missingToShop(${i},${saved})">🛒 Añadir lo que falta</button>`:""}
+      ${saved?`<button class="btn ghost" onclick="unsave('${r.id}')">Quitar de guardadas</button>`
+             :`<button class="btn ${isSaved?"ghost":"secondary"}" onclick="saveRecipe(${i})" ${isSaved?"disabled":""}>${isSaved?"Guardada ✓":"⭐ Guardar"}</button>`}
+    </div>
+  </div>`;
+}
+function missingToShop(i,saved){
+  const r=(saved?state.saved:lastRecipes)[i]; if(!r) return;
+  let n=0; r.missing.forEach(m=>{ if(addShop(m,"")) n++; });
+  save(); renderShop(); toast(n?`${n} añadido${n>1?"s":""} a la compra`:"Ya estaba en la lista");
+}
+function saveRecipe(i){
+  const r=lastRecipes[i]; if(!r) return;
+  state.saved.unshift({...r,savedAt:Date.now()}); save();
+  $("#recipe-results").innerHTML=lastRecipes.map((r,i)=>recipeCard(r,i,false)).join("");
+  toast("Receta guardada ⭐");
+}
+function unsave(id){ state.saved=state.saved.filter(s=>s.id!==id); save(); renderSaved(); }
+function renderSaved(){
+  $("#r-saved").innerHTML = state.saved.length ? state.saved.map((r,i)=>recipeCard(r,i,true)).join("")
+    : `<div class="empty">Aún no has guardado recetas.<br>Pulsa ⭐ en una que te guste.</div>`;
+}
+
+/* ---------- Ajustes ---------- */
+$("#cfg-key").value=state.settings.apiKey; $("#cfg-model").value=state.settings.model;
+$("#cfg-save").addEventListener("click",()=>{
+  state.settings.apiKey=$("#cfg-key").value.trim();
+  state.settings.model=$("#cfg-model").value.trim()||"gemini-flash-latest";
+  $("#cfg-model").value=state.settings.model;
+  save(); toast("Ajustes guardados");
+});
+$("#cfg-test").addEventListener("click",async()=>{
+  const key=$("#cfg-key").value.trim(), model=$("#cfg-model").value.trim()||"gemini-flash-latest";
+  if(!key){ toast("Pega primero la clave"); return; }
+  const b=$("#cfg-test"); b.disabled=true; b.innerHTML=`<span class="spinner"></span>Probando…`;
+  try{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{
+      method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},
+      body:JSON.stringify({contents:[{role:"user",parts:[{text:"Responde solo: OK"}]}]})});
+    if(res.ok){ state.settings.apiKey=key; state.settings.model=model; save(); toast("¡Conexión correcta! ✅"); }
+    else{ const d=await res.json().catch(()=>({})); toast("Error: "+(d?.error?.message||res.status).toString().slice(0,80)); }
+  }catch(e){ toast("Sin conexión a internet"); }
+  finally{ b.disabled=false; b.textContent="Probar conexión"; }
+});
+$("#bk-export").addEventListener("click",async()=>{
+  const data={...state,settings:{...state.settings,apiKey:""},exportedAt:new Date().toISOString(),app:"despensa"};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const name=`despensa-${new Date().toISOString().slice(0,10)}.json`;
+  const file=new File([blob],name,{type:"application/json"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:"Copia Despensa"}); return; }catch(e){ if(e.name==="AbortError") return; }
+  }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+});
+$("#bk-import").addEventListener("click",()=>$("#bk-file").click());
+$("#bk-file").addEventListener("change",async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(!Array.isArray(d.pantry)||!Array.isArray(d.shop)) throw 0;
+    if(!confirm("Esto sustituirá tus datos actuales por los de la copia. ¿Seguir?")) return;
+    const key=state.settings.apiKey;
+    const df=defaultState(); state={pantry:d.pantry,shop:d.shop,saved:d.saved||[],habits:d.habits||df.habits,habitsDone:d.habitsDone||df.habitsDone,tasks:d.tasks||[],gym:d.gym||df.gym,settings:{...df.settings,...(d.settings||{}),apiKey:key}};
+    save(); renderAll(); toast("Copia importada ✅");
+  }catch(err){ toast("Ese archivo no es una copia válida"); }
+  e.target.value="";
+});
+$("#wipe").addEventListener("click",()=>{
+  if(!confirm("¿Seguro? Se borrará todo: despensa, compra, recetas, hábitos, tareas y gym.")) return;
+  const s=state.settings; state=defaultState(); state.settings=s; save(); renderAll(); toast("Datos borrados");
+});
+
+
+/* ---------- Fechas ---------- */
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr=()=>ymd(new Date());
+const dow=d=>(d.getDay()+6)%7; // 0 = lunes
+function mondayOf(d){ const m=new Date(d); m.setHours(0,0,0,0); m.setDate(m.getDate()-dow(m)); return m; }
+const DAYN=["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+const DAYL=["L","M","X","J","V","S","D"];
+
+/* ---------- Hoy: hábitos y tareas ---------- */
+function habitsDoneToday(){
+  if(state.habitsDone.date!==todayStr()){ state.habitsDone={date:todayStr(),ids:[]}; save(); }
+  return state.habitsDone.ids;
+}
+function daysLabel(days){
+  if(days.length===7) return "Todos los días";
+  if(!days.length) return "Ningún día";
+  return [...days].sort().map(i=>DAYL[i]).join(" · ");
+}
+function taskWhen(t){
+  if(!t.date) return {txt:"",cls:""};
+  const n=daysLeft(t.date);
+  if(n<0) return {txt:"Atrasada ("+fmtDate(t.date)+")",cls:"overdue"};
+  if(n===0) return {txt:"Hoy",cls:""};
+  if(n===1) return {txt:"Mañana",cls:""};
+  if(n<7) return {txt:DAYN[dow(new Date(t.date+"T00:00:00"))],cls:""};
+  return {txt:fmtDate(t.date),cls:""};
+}
+function renderToday(){
+  const done=habitsDoneToday(), td=dow(new Date());
+  const hs=state.habits.filter(h=>h.days.includes(td));
+  const others=state.habits.filter(h=>!h.days.includes(td));
+  $("#habits-title").textContent=hs.length?`Hábitos de hoy (${hs.filter(h=>done.includes(h.id)).length}/${hs.length})`:"Hábitos de hoy";
+  let html=hs.length?`<ul class="list">${hs.map(h=>`<li class="item ${done.includes(h.id)?"done":""}">
+      <button class="chk" onclick="toggleHabit('${h.id}')">${done.includes(h.id)?"✓":""}</button>
+      <div class="info" onclick="toggleHabit('${h.id}')"><div class="name">${esc(h.name)}</div><div class="meta">${daysLabel(h.days)}</div></div>
+      <button class="icon-btn" title="Editar" onclick="editHabit('${h.id}')">✏️</button></li>`).join("")}</ul>`
+    : `<div class="empty">Hoy no tienes hábitos.</div>`;
+  if(others.length) html+=`<details><summary class="small" style="margin:6px 2px 10px;cursor:pointer">Otros días (${others.length})</summary><ul class="list">${others.map(h=>`<li class="item">
+      <div class="info"><div class="name">${esc(h.name)}</div><div class="meta">${daysLabel(h.days)}</div></div>
+      <button class="icon-btn" title="Editar" onclick="editHabit('${h.id}')">✏️</button></li>`).join("")}</ul></details>`;
+  $("#habit-list").innerHTML=html;
+
+  const tasks=[...state.tasks].sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
+  const pend=state.shop.filter(i=>!i.done).length;
+  $("#task-list").innerHTML=tasks.length?`<ul class="list">${tasks.map(t=>{
+      const w=taskWhen(t); const extra=/compra/i.test(t.name)&&pend?`${pend} en la lista`:"";
+      const meta=[w.txt,extra].filter(Boolean).join(" · ");
+      return `<li class="item" id="task-${t.id}">
+      <button class="chk" onclick="doneTask('${t.id}')"></button>
+      <div class="info"><div class="name">${esc(t.name)}</div>${meta?`<div class="meta ${w.cls}">${esc(meta)}</div>`:""}</div>
+      <button class="icon-btn" title="Editar" onclick="editTask('${t.id}')">✏️</button></li>`;}).join("")}</ul>`
+    : `<div class="empty">Sin tareas pendientes 👌</div>`;
+}
+function toggleHabit(id){
+  const ids=habitsDoneToday(); const i=ids.indexOf(id);
+  if(i>=0) ids.splice(i,1); else ids.push(id);
+  save(); renderToday();
+}
+function doneTask(id){
+  const li=$("#task-"+id); if(li){ li.classList.add("done"); li.querySelector(".chk").textContent="✓"; }
+  setTimeout(()=>{ state.tasks=state.tasks.filter(t=>t.id!==id); save(); renderToday(); },450);
+  toast("Tarea hecha ✅");
+}
+let editDays=[];
+function dayPicker(){ return `<div class="daypick" id="daypick">${DAYL.map((d,i)=>`<button type="button" class="${editDays.includes(i)?"sel":""}" onclick="toggleEditDay(${i})">${d}</button>`).join("")}</div>`; }
+function toggleEditDay(i){ const k=editDays.indexOf(i); if(k>=0) editDays.splice(k,1); else editDays.push(i); $("#daypick").outerHTML=dayPicker(); }
+function editHabit(id){
+  const h=id?state.habits.find(x=>x.id===id):null;
+  editDays=h?[...h.days]:[0,1,2,3,4,5,6];
+  openModal(`<h3>${h?"Editar hábito":"Nuevo hábito"}</h3>
+    <label>Nombre</label><input id="h-name" value="${h?esc(h.name):""}" placeholder="ej. Leer 10 minutos">
+    <label style="margin-top:10px">Qué días</label>${dayPicker()}
+    <button class="btn block" onclick="saveHabit('${id||""}')">Guardar</button>
+    ${h?`<button class="btn danger block" onclick="delHabit('${id}')">Eliminar</button>`:""}
+    <button class="btn ghost block" onclick="closeModal()">Cancelar</button>`);
+  if(!h) setTimeout(()=>$("#h-name").focus(),50);
+}
+function saveHabit(id){
+  const n=$("#h-name").value.trim(); if(!n){ $("#h-name").focus(); return; }
+  if(!editDays.length){ toast("Elige al menos un día"); return; }
+  if(id){ const h=state.habits.find(x=>x.id===id); h.name=cap(n); h.days=[...editDays].sort(); }
+  else state.habits.push({id:uid(),name:cap(n),days:[...editDays].sort()});
+  save(); closeModal(); renderToday();
+}
+function delHabit(id){ state.habits=state.habits.filter(h=>h.id!==id); save(); closeModal(); renderToday(); toast("Hábito eliminado"); }
+function editTask(id){
+  const t=id?state.tasks.find(x=>x.id===id):null;
+  openModal(`<h3>${t?"Editar tarea":"Nueva tarea"}</h3>
+    <label>Qué hay que hacer</label><input id="t-name" value="${t?esc(t.name):""}" placeholder="ej. Llamar al taller">
+    <label style="margin-top:10px">Para cuándo (opcional)</label><input id="t-date" type="date" value="${t?esc(t.date||""):""}">
+    <button class="btn block" onclick="saveTask('${id||""}')">Guardar</button>
+    ${t?`<button class="btn danger block" onclick="delTask('${id}')">Eliminar</button>`:""}
+    <button class="btn ghost block" onclick="closeModal()">Cancelar</button>`);
+  if(!t) setTimeout(()=>$("#t-name").focus(),50);
+}
+function saveTask(id){
+  const n=$("#t-name").value.trim(); if(!n){ $("#t-name").focus(); return; }
+  const d=$("#t-date").value;
+  if(id){ const t=state.tasks.find(x=>x.id===id); t.name=cap(n); t.date=d; }
+  else state.tasks.push({id:uid(),name:cap(n),date:d});
+  save(); closeModal(); renderToday();
+}
+function delTask(id){ state.tasks=state.tasks.filter(t=>t.id!==id); save(); closeModal(); renderToday(); toast("Tarea eliminada"); }
+$("#add-hab").addEventListener("click",()=>openModal(`<h3>¿Qué quieres añadir?</h3>
+  <button class="btn block" onclick="editHabit('')">🔁 Hábito <span style="font-weight:400">(se repite)</span></button>
+  <button class="btn secondary block" onclick="editTask('')">📌 Tarea <span style="font-weight:400">(una vez)</span></button>
+  <button class="btn ghost block" onclick="closeModal()">Cancelar</button>`));
+
+/* ---------- Gym ---------- */
+const GROUPS=["Pierna","Pecho","Espalda","Hombro","Brazos","Abdomen","Cardio","Descanso"];
+let gymOpen=null;
+const trained=g=>(g||[]).some(x=>x!=="Descanso");
+function lastOfWeek(weekStr,days){
+  for(let i=6;i>=0;i--){ if(trained(days[i])){ const d=new Date(weekStr+"T00:00:00"); d.setDate(d.getDate()+i); return {date:ymd(d),groups:days[i].filter(x=>x!=="Descanso")}; } }
+  return null;
+}
+function gymCheckWeek(){
+  const wk=ymd(mondayOf(new Date()));
+  if(state.gym.week!==wk){
+    if(state.gym.week){ const l=lastOfWeek(state.gym.week,state.gym.days); if(l) state.gym.last=l; }
+    state.gym.week=wk; state.gym.days={}; save();
+  }
+}
+function renderGym(){
+  gymCheckWeek();
+  const mon=new Date(state.gym.week+"T00:00:00"), td=todayStr();
+  if(gymOpen===null) gymOpen=dow(new Date());
+  let html="";
+  for(let i=0;i<7;i++){
+    const d=new Date(mon); d.setDate(mon.getDate()+i);
+    const g=state.gym.days[i]||[], isT=ymd(d)===td;
+    html+=`<div class="day ${isT?"today":""}" onclick="gymToggleDay(${i})">
+      <div class="dn">${DAYN[i]} ${d.getDate()}${isT?"<small>Hoy</small>":""}</div>
+      <div style="flex:1">${g.length?g.map(x=>`<span class="gchip">${x}</span>`).join(""):`<span class="small">—</span>`}</div>
+      <span class="small">${gymOpen===i?"▲":"▼"}</span></div>`;
+    if(gymOpen===i) html+=`<div class="picker">${GROUPS.map(x=>`<button class="${g.includes(x)?"sel":""}" onclick="gymPick(${i},'${x}')">${x}</button>`).join("")}</div>`;
+  }
+  $("#gym-week").innerHTML=html;
+  const l=lastOfWeek(state.gym.week,state.gym.days)||state.gym.last;
+  if(l){
+    const d=new Date(l.date+"T00:00:00"), n=-daysLeft(l.date);
+    const ago=n===0?"hoy":n===1?"ayer":`hace ${n} días`;
+    $("#gym-last").innerHTML=`${DAYN[dow(d)]} ${d.getDate()} · ${esc(l.groups.join(" + "))}<div class="small" style="font-weight:400;margin:2px 0 0">${ago}</div>`;
+  } else $("#gym-last").textContent="Aún no has apuntado nada";
+}
+function gymToggleDay(i){ gymOpen=gymOpen===i?-1:i; renderGym(); }
+function gymPick(i,x){
+  const g=state.gym.days[i]||[];
+  if(x==="Descanso") state.gym.days[i]=g.includes(x)?[]:["Descanso"];
+  else{ const r=g.filter(y=>y!=="Descanso"); state.gym.days[i]=r.includes(x)?r.filter(y=>y!==x):[...r,x]; }
+  if(!state.gym.days[i].length) delete state.gym.days[i];
+  // Marca el hábito de gym si es hoy
+  if(i===dow(new Date())){
+    const h=state.habits.find(h=>/gym|gimnasio/i.test(h.name));
+    if(h){ const ids=habitsDoneToday(), on=trained(state.gym.days[i]), k=ids.indexOf(h.id);
+      if(on&&k<0) ids.push(h.id); if(!on&&k>=0) ids.splice(k,1); }
+  }
+  save(); renderGym();
+}
+
+/* ---------- Modal ---------- */
+function openModal(html){ $("#modal").innerHTML=html; $("#modal-bg").classList.add("show"); }
+function closeModal(){ $("#modal-bg").classList.remove("show"); }
+$("#modal-bg").addEventListener("click",e=>{ if(e.target.id==="modal-bg") closeModal(); });
+
+/* ---------- Inicio ---------- */
+function renderAll(){ renderPantry(); renderShop(); renderSaved(); renderRecipeHint(); renderToday(); renderGym(); }
+renderAll(); setHeader("today");
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ renderToday(); renderGym(); const v=document.querySelector("nav button.active")?.dataset.view; if(v) setHeader(v); } });
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
