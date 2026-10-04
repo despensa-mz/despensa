@@ -1,6 +1,6 @@
 // Cache para que la app abra sin conexión. Sube el número de versión si cambias archivos.
-const CACHE = "despensa-v3";
-const FILES = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
+const CACHE = "mzdaily-v1";
+const FILES = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "firebase.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
